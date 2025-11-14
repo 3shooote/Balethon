@@ -1,14 +1,15 @@
 from typing import Union, List
 
 from . import ReplyMarkup, ReplyKeyboardButton
-from .list import List as BalethonList
+from .list import Object, List as BalethonList
 from balethon import objects
 
 
 class ReplyKeyboard(ReplyMarkup):
     attribute_names = [
         ("resize", "resize_keyboard"),
-        ("one_time", "one_time_keyboard")
+        ("one_time", "one_time_keyboard"),
+        ("remove", "remove_keyboard")
     ]
 
     def __init__(
@@ -17,15 +18,28 @@ class ReplyKeyboard(ReplyMarkup):
             resize: bool = None,
             one_time: bool = None,
             selective: bool = None,
+            remove: bool = None,
             **kwargs
     ):
         super().__init__(**kwargs)
-        self.keyboard: List[List["objects.ReplyKeyboardButton"]] = BalethonList()
+        if "keyboard" not in kwargs:
+            self.keyboard: List[List["objects.ReplyKeyboardButton"]] = BalethonList()
         for row in rows:
             self.add_row(*row)
         self.resize: bool = resize
         self.one_time: bool = one_time
         self.selective: bool = selective
+        self.remove: bool = remove
+
+    @classmethod
+    def expected_types(cls):
+        expected_types = super().expected_types()
+        expected_types["keyboard"] = List[List[objects.ReplyKeyboardButton]]
+        return expected_types
+
+    @classmethod
+    def wrap(cls, raw_object):
+        return Object.wrap.__func__(cls, raw_object)
 
     def add_button(
             self,

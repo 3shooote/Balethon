@@ -2,6 +2,7 @@ from typing import get_type_hints, get_args, get_origin, Union, List, Optional
 from copy import copy
 from json import dumps
 
+from ..enums import NameEnum
 import balethon
 
 
@@ -27,6 +28,13 @@ class Object:
                 if isinstance(value, list):
                     raw_object[key] = wrap(expected_type, value)
                 continue
+            if issubclass(expected_type, NameEnum):
+                try:
+                    raw_object[key] = expected_type(value)
+                except ValueError:
+                    pass
+                else:
+                    continue
             if not issubclass(expected_type, Object):
                 continue
             if isinstance(value, expected_type):
@@ -66,6 +74,8 @@ class Object:
         result = copy(self)
         del result.client
         for key, value in result.__dict__.copy().items():
+            if isinstance(value, NameEnum):
+                result[key] = value.value
             if isinstance(value, list):
                 result[key] = unwrap(value)
             if isinstance(value, Object):
@@ -73,27 +83,28 @@ class Object:
             if value is None:
                 delattr(result, key)
         for attribute_name, key_name in result.attribute_names:
-            if result.__dict__.get(key_name):
-                result[attribute_name] = result.__dict__.pop(key_name)
+            if result.__dict__.get(attribute_name):
+                result[key_name] = result.__dict__.pop(attribute_name)
         return result.__dict__
 
     def to_json(self):
         return dumps(self.unwrap(), ensure_ascii=False, indent=4)
 
     def __repr__(self):
-        attributes = {}
+        attributes = []
         for key, value in self.__dict__.items():
             if key == "client":
                 continue
             if value is None:
                 continue
-            attributes[key] = value
-        attributes = [f"{key}={repr(value)}," for key, value in attributes.items()]
-        attributes = "\n".join(attributes)
-        if attributes:
-            attributes = "\n".join(" "*4 + line for line in attributes.splitlines())
-            attributes = f"\n{attributes}\n"
-        return f"{type(self).__name__}({attributes})"
+            attributes.append(f"{key}={repr(value)}")
+
+        if not attributes:
+            return f"{type(self).__name__}()"
+
+        attributes = ",\n".join(attributes)
+        attributes = "\n".join(" "*4 + line for line in attributes.splitlines())
+        return f"{type(self).__name__}(\n{attributes}\n)"
 
 
 def wrap(expected_type, raw_object):
@@ -131,5 +142,8 @@ def unwrap(wrapped_object):
 
     if isinstance(wrapped_object, Object):
         return wrapped_object.unwrap()
+    
+    if isinstance(wrapped_object, NameEnum):
+        return wrapped_object.value
 
     return wrapped_object
