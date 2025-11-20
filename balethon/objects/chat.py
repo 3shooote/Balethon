@@ -17,6 +17,7 @@ class Chat(Object):
             first_name: str = None,
             last_name: str = None,
             all_members_are_administrators: bool = None,
+            bio: str = None,
             description: str = None,
             invite_link: str = None,
             pinned_message: "objects.Message" = None,
@@ -33,6 +34,7 @@ class Chat(Object):
         self.first_name: str = first_name
         self.last_name: str = last_name
         self.all_members_are_administrators: bool = all_members_are_administrators
+        self.bio: str = bio
         self.description: str = description
         self.invite_link: str = invite_link
         self.pinned_message: "objects.Message" = pinned_message
