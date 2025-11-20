@@ -43,7 +43,7 @@ class GetChat:
             result.type = ChatType.CHANNEL if info.get("type", "") == "channel" else ChatType.GROUP
             result.username = info.get("username", "")
             result.title = info.get("title", "")
-            result.description = info.get("description", "")
+            result.description = info.get("description") or info.get("bio") or ""
             result.invite_link = info.get("invite_link", "")
             result.id = info.get("id", "")
 
