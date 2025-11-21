@@ -32,45 +32,31 @@ class GetChat:
         elif chat_id.startswith("ble.ir/"):
             chat_id = chat_id.replace("ble.ir/", "")
 
-        ver, info = await self.connection.get_peer_info(chat_id)
+        info = await self.connection.get_peer_info(chat_id)
         result = Chat()
         
-        if ver == "v1":
-            if not info.get("ok", False):
-                raise RPCError.create(code=404, description="no such group or user", reason="getChat")
+        if info["query"].get("token"):
+            token = info["query"]["token"]
+            result.invite_link = f"{self.connection.SHORT_URL}/join/{token}"
 
-            info = info.get("result", {})
-            result.type = ChatType.CHANNEL if info.get("type", "") == "channel" else ChatType.GROUP
-            result.username = info.get("username", "")
-            result.title = info.get("title", "")
-            result.description = info.get("description") or info.get("bio") or ""
-            result.invite_link = info.get("invite_link", "")
-            result.id = info.get("id", "")
+        info = info["props"]["pageProps"]
 
-            result.bind(self)
-            return result
-        else:
-            if info["query"].get("token"):
-                token = info["query"]["token"]
-                result.invite_link = f"{self.connection.SHORT_URL}/join/{token}"
+        if info["peer"]["type"] == 0:
+            chat_id = f"@{chat_id}"
+            return await self.auto_execute("post", "getChat", locals())
 
-            info = info["props"]["pageProps"]
+        elif info["peer"]["type"] == 1:
+            result.type = ChatType.PRIVATE
+            result.username = info["user"]["nick"] if info["user"].get("nick") else None
+            result.first_name = info["user"]["title"]
+            result.description = info["user"]["description"]
 
-            if info["peer"]["type"] == 0:
-                raise RPCError.create(code=404, description="no such group or user", reason="getChat")
+        elif info["peer"]["type"] == 2:
+            result.type = ChatType.CHANNEL if info["group"]["isChannel"] else ChatType.GROUP
+            result.username = info["group"]["nick"] if info["group"].get("nick") else None
+            result.title = info["group"]["title"]
+            result.description = info["group"]["description"]
 
-            elif info["peer"]["type"] == 1:
-                result.type = ChatType.PRIVATE
-                result.username = info["user"]["nick"] if info["user"].get("nick") else None
-                result.first_name = info["user"]["title"]
-                result.description = info["user"]["description"]
-
-            elif info["peer"]["type"] == 2:
-                result.type = ChatType.CHANNEL if info["group"]["isChannel"] else ChatType.GROUP
-                result.username = info["group"]["nick"] if info["group"].get("nick") else None
-                result.title = info["group"]["title"]
-                result.description = info["group"]["description"]
-
-            result.id = info["peer"]["id"]
-            result.bind(self)
-            return result
+        result.id = info["peer"]["id"]
+        result.bind(self)
+        return result
