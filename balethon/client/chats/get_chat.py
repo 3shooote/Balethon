@@ -33,8 +33,9 @@ class GetChat:
             chat_id = chat_id.replace("ble.ir/", "")
 
         info = await self.connection.get_peer_info(chat_id)
+
         result = Chat()
-        
+
         if info["query"].get("token"):
             token = info["query"]["token"]
             result.invite_link = f"{self.connection.SHORT_URL}/join/{token}"
