@@ -12,8 +12,8 @@ class GetChat:
             self: "balethon.Client",
             chat_id: Union[int, str]
     ) -> Chat:
-        if isinstance(chat_id, int)):
+        if isinstance(chat_id, int):
             return await self.auto_execute("post", "getChat", locals())
-        if (isinstance(chat_id, str)):
+        if isinstance(chat_id, str):
             chat_id = f"@{chat_id.lstrip('@')}".lower()
             return await self.auto_execute("post", "getChat", locals())
